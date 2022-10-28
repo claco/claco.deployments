@@ -1,0 +1,107 @@
+version: "3.9"
+
+name: deployments
+
+services:
+
+  # Grafana metrics reports, alerts, and dashboard service container
+
+  grafana:
+    build:
+      context: ./metrics/grafana
+    container_name: grafana
+    depends_on:
+      prometheus: { condition: service_healthy }
+    hostname: grafana
+    ports: [ "3000:3000" ]
+    volumes:
+      - vault-secrets:/vault/secrets
+
+  # Vault service containr used for boostrapping/configuration as code
+
+  vault-server:
+    build:
+      context: ./vault/server
+    cap_add: [ IPC_LOCK ]
+    container_name: vault-server
+    expose: [ 8200 ]
+    hostname: vault-server
+
+  # Vault Proxy service container with /vault/secrets volume using a specific Vault AppRole
+
+  vault-proxy:
+    build:
+      context: ./vault/proxy
+    cap_add: [ IPC_LOCK ]
+    container_name: vault-proxy
+    depends_on:
+      vault-server: { condition: service_healthy }
+    environment:
+      - VAULT_ADDR=http://vault-server:8200
+    expose: [ 8200 ]
+    hostname: vault-proxy
+    secrets: [ id_rsa, id_rsa.pub, username, password ]
+    volumes:
+      - vault-secrets:/vault/secrets
+
+  # Prometheus metrics collection/processing/storage service container
+
+  prometheus:
+    build:
+      context: ./metrics/prometheus
+    container_name: prometheus
+    depends_on:
+      vault-server: { condition: service_healthy }
+      vault-proxy: { condition: service_healthy }
+      jenkins-server: { condition: service_healthy }
+    expose: [ 9090 ]
+    hostname: prometheus
+    ports: [ "9090:9090" ]
+    volumes:
+      - vault-secrets:/vault/secrets
+
+  # Jenkins service container configured using Vault (JCasC)
+
+  jenkins-server:
+    build:
+      context: ./jenkins/server
+    container_name: jenkins-server
+    depends_on:
+      vault-proxy: { condition: service_healthy }
+    environment:
+      - CASC_VAULT_AGENT_ADDR=http://vault-proxy:8200
+      - CASC_VAULT_ENGINE_VERSION=2
+      - CASC_VAULT_PATHS=casc/jenkins
+    expose: [ 8080 ]
+    hostname: jenkins-server
+    ports: [ "8080:8080" ]
+
+  # Jenkins SSH Agent service container using Vault Agent Proxy SSH Secrets
+
+  jenkins-agent:
+    build:
+      context: ./jenkins/agent
+    cap_add: [ SYS_CHROOT ]
+    container_name: jenkins-agent
+    depends_on:
+      jenkins-server: { condition: service_healthy }
+    expose: [ 22 ]
+    hostname: jenkins-agent
+    secrets: [ id_rsa.pub ]
+
+# Local secrets that are bootstrapped into the Vault service container
+
+secrets:
+  id_rsa:
+    file: ${PWD}/dist/secrets/id_rsa
+  id_rsa.pub:
+    file: ${PWD}/dist/secrets/id_rsa.pub
+  password:
+    file: ${PWD}/dist/secrets/password
+  username:
+    file: ${PWD}/dist/secrets/username
+
+# Vault secrets share volume
+
+volumes:
+  vault-secrets:
