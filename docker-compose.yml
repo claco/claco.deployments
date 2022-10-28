@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+
+  amazon:
+    image: localstack/localstack
+    container_name: amazon
+    hostname: amazon
+    environment:
+      - SERVICES=events
+    ports:
+      - 4566:4566
+
+  api-server:
+    image: api-server
+    container_name: api-server
+    hostname: api-server
+    build:
+      context: .
+      dockerfile: ./api-server/Dockerfile
+    depends_on:
+      - amazon
+      - jenkins-controller
+    environment:
+      - AWS_ACCESS_KEY_ID=deployments
+      - AWS_SECRET_ACCESS_KEY=deployments
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://amazon:4566
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./build/env/jenkins.administrator
+    ports:
+      - 5678:5678 # python debugger (service)
+      - 50051:50051 # grpc (service)
+      - 50052:50052 # grpc (proxied)
+      - 50053:50053 # json (proxied)
+    # stop_signal: SIGKILL
+
+  jenkins-controller:
+    image: jenkins-controller
+    container_name: jenkins-controller
+    hostname: jenkins-controller
+    build:
+      context: ./jenkins-controller
+    depends_on:
+      - vault-server
+      - jenkins-node
+    env_file:
+      - ./build/env/jenkins.controller
+      - ./build/env/jenkins.node
+      - ./build/env/github.repository
+    ports:
+      - 8080:8080
+    volumes:
+      - jenkins-controller:/var/jenkins_home
+      - ./:/var/jenkins/repository
+
+  jenkins-node:
+    image: jenkins-node
+    container_name: jenkins-node
+    hostname: jenkins-node
+    build:
+      context: ./jenkins-node
+    env_file:
+      - ./build/env/jenkins.node
+    volumes:
+      - jenkins-node:/var/jenkins
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/var/jenkins/repository
+
+  vault-server:
+    image: vault-server
+    container_name: vault-server
+    hostname: vault-server
+    build:
+      context: ./vault-server
+    cap_add:
+      - IPC_LOCK
+    env_file:
+      - ./build/env/vault.server
+    ports:
+      - 8200:8200
+
+volumes:
+  jenkins-controller:
+  jenkins-node:

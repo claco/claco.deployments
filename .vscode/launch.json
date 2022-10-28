@@ -1,0 +1,35 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Deployment Service",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/deployctl",
+            "args": [
+                "service",
+                "run"
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Deployment Client",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/deployctl",
+            "args": "${input:deploymentClientArguments}",
+            "justMyCode": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "deploymentClientArguments",
+            "type": "promptString",
+            "description": "Deployment Client Arguments",
+            "default": "--help"
+        },
+    ]
+}

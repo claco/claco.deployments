@@ -1,0 +1,265 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "deployments.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "DeploymentsService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/deployments": {
+      "post": {
+        "operationId": "DeploymentsService_CreateDeployment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/deploymentsCreateDeploymentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/deploymentsCreateDeploymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DeploymentsService"
+        ]
+      }
+    },
+    "/{id}": {
+      "delete": {
+        "operationId": "DeploymentsService_DeleteDeployment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/deploymentsDeleteDeploymentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "deployments/[^/]+"
+          }
+        ],
+        "tags": [
+          "DeploymentsService"
+        ]
+      },
+      "patch": {
+        "operationId": "DeploymentsService_QueueDeployment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/deploymentsQueueDeploymentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "deployments/[^/]+"
+          }
+        ],
+        "tags": [
+          "DeploymentsService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "deploymentsCreateDeploymentRequest": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        }
+      }
+    },
+    "deploymentsCreateDeploymentResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/deploymentsDeploymentServiceRequestResult"
+        },
+        "deployment": {
+          "$ref": "#/definitions/deploymentsDeployment"
+        }
+      }
+    },
+    "deploymentsDeleteDeploymentResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/deploymentsDeploymentServiceRequestResult"
+        },
+        "deployment": {
+          "$ref": "#/definitions/deploymentsDeployment"
+        }
+      }
+    },
+    "deploymentsDeployment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/deploymentsDeploymentStatus"
+        },
+        "result": {
+          "$ref": "#/definitions/deploymentsDeploymentResult"
+        }
+      }
+    },
+    "deploymentsDeploymentResult": {
+      "type": "string",
+      "enum": [
+        "DR_UNSPECIFIED",
+        "DR_SUCCESS",
+        "DR_FAILURE"
+      ],
+      "default": "DR_UNSPECIFIED"
+    },
+    "deploymentsDeploymentServiceEvent": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "object"
+        }
+      }
+    },
+    "deploymentsDeploymentServiceRequestResult": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/deploymentsDeploymentServiceResultCode"
+        },
+        "message": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/deploymentsDeploymentServiceEvent"
+          }
+        }
+      }
+    },
+    "deploymentsDeploymentServiceResultCode": {
+      "type": "string",
+      "enum": [
+        "DSRC_UNSPECIFIED",
+        "DSRC_OK",
+        "DSRC_ERROR"
+      ],
+      "default": "DSRC_UNSPECIFIED"
+    },
+    "deploymentsDeploymentStatus": {
+      "type": "string",
+      "enum": [
+        "DS_UNSPECIFIED",
+        "DS_CREATED",
+        "DS_QUEUED",
+        "DS_STARTED",
+        "DS_COMPLETED",
+        "DS_DELETED"
+      ],
+      "default": "DS_UNSPECIFIED"
+    },
+    "deploymentsQueueDeploymentResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/deploymentsDeploymentServiceRequestResult"
+        },
+        "deployment": {
+          "$ref": "#/definitions/deploymentsDeployment"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\n The JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

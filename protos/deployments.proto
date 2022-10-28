@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package claco.deployments;
+
+option csharp_namespace = "Deployments.Api";
+option go_package = "./";
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+enum DeploymentServiceResultCode {
+    DSRC_UNSPECIFIED = 0;
+    DSRC_OK = 1;
+    DSRC_ERROR = 2;
+}
+
+enum DeploymentStatus {
+    DS_UNSPECIFIED = 0;
+    DS_CREATED = 1;
+    DS_QUEUED = 2;
+    DS_STARTED = 3;
+    DS_COMPLETED = 4;
+    DS_DELETED = 5;
+ }
+
+enum DeploymentResult {
+    DR_UNSPECIFIED = 0;
+    DR_SUCCESS = 1;
+    DR_FAILURE = 2;
+}
+
+message Deployment {
+    string id = 1;
+    string image = 2;
+    DeploymentStatus status = 3;
+    DeploymentResult result = 4;
+}
+
+message DeploymentServiceEvent {
+    string event = 1;
+    google.protobuf.Struct detail = 2;
+}
+
+message DeploymentServiceRequestResult {
+    DeploymentServiceResultCode code = 1;
+    optional string message = 2;
+    repeated DeploymentServiceEvent events = 3;
+}
+
+message CreateDeploymentRequest {
+    string image = 1;
+}
+
+message CreateDeploymentResponse {
+    DeploymentServiceRequestResult result = 1;
+    Deployment deployment = 2;
+}
+
+message DeleteDeploymentRequest {
+    string id = 1;
+}
+
+message DeleteDeploymentResponse {
+    DeploymentServiceRequestResult result = 1;
+    Deployment deployment = 2;
+}
+
+message QueueDeploymentRequest {
+    string id = 1;
+}
+
+message QueueDeploymentResponse {
+    DeploymentServiceRequestResult result = 1;
+    Deployment deployment = 2;
+}
+
+service DeploymentsService {
+    rpc CreateDeployment (CreateDeploymentRequest) returns (CreateDeploymentResponse) {
+        option (google.api.http) = {
+            post: "/deployments"
+            body: "*"
+          };
+    };
+
+    rpc DeleteDeployment (DeleteDeploymentRequest) returns (DeleteDeploymentResponse) {
+        option (google.api.http) = {
+            delete: "/{id=deployments/*}"
+          };
+    };
+
+    rpc QueueDeployment (QueueDeploymentRequest) returns (QueueDeploymentResponse) {
+        option (google.api.http) = {
+            patch: "/{id=deployments/*}"
+          };
+    };
+}
