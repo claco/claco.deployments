@@ -1,0 +1,124 @@
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              id: "jenkins-ssh-agent"
+              description: "Jenkins SSH Agent Private Key"
+              passphrase: ${CASC_VAULT_TOKEN}
+              privateKeySource:
+                directEntry:
+                  privateKey: ${cubbyhole/ssh/jenkins/id_rsa}
+              scope: GLOBAL
+              username: "jenkins"
+              usernameSecret: true
+          - usernamePassword:
+              id: github-access-token
+              description: GitHub API Personal Access Token
+              password: ${cubbyhole/github/token}
+              scope: GLOBAL
+              username: ${cubbyhole/github/username}
+              usernameSecret: true
+          - vaultTokenCredential:
+              id: vault-plugin-credential
+              description: Vault Token for Jenkins Vault Plugin
+              scope: GLOBAL
+              token: ${CASC_VAULT_TOKEN}
+
+jenkins:
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - GROUP:Overall/Read:authenticated
+        - USER:Overall/Administer:${cubbyhole/jenkins/administrator/username}
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: GITHUB_REPOSITORY
+            value: ${cubbyhole/github/repository}
+          - key: GITHUB_USERNAME
+            value: ${cubbyhole/github/username}
+  labelString: controller
+  mode: EXCLUSIVE
+  nodes:
+    - permanent:
+        labelString: node docker linux
+        launcher:
+          ssh:
+            credentialsId: jenkins-ssh-agent
+            host: jenkins-node
+            port: 22
+            sshHostKeyVerificationStrategy: nonVerifyingKeyVerificationStrategy
+        name: jenkins-node
+        nodeDescription: Jenkins Node (JCasC Generated)
+        numExecutors: 5
+        remoteFS: ${JENKINS_NODE_ROOT}
+        retentionStrategy: always
+  noUsageStatistics: true
+  numExecutors: 0
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: ${cubbyhole/jenkins/administrator/username}
+          name: Administrator
+          description: Administration Account (JCasC Generated)
+          password: ${cubbyhole/jenkins/administrator/password}
+          properties:
+            - timezone:
+                timeZoneName: America/New_York
+  views:
+    - list:
+        name: "Building"
+        jobFilters:
+          - buildStatusFilter:
+              building: true
+              inBuildQueue: true
+              includeExcludeTypeString: "includeMatched"
+              neverBuilt: false
+        recurse: true
+    - list:
+        name: "Deployments"
+        includeRegex: "deployments/.*"
+        recurse: true
+    - list:
+        name: "Failed"
+        jobFilters:
+          - jobStatusFilter:
+              aborted: true
+              disabled: false
+              failed: true
+              includeExcludeTypeString: "includeMatched"
+              stable: false
+              unstable: true
+        recurse: true
+    - list:
+        name: "Recent"
+        jobFilters:
+          - jobTypeFilter:
+              includeExcludeTypeString: "includeMatched"
+              jobType: "org.jenkinsci.plugins.workflow.job.WorkflowJob"
+          - mostRecentJobsFilter:
+              checkStartTime: false
+              maxToInclude: 10
+        recurse: true
+
+jobs:
+  - file: "${JENKINS_NODE_ROOT}/repository/jobs/seed.groovy"
+
+unclassified:
+  location:
+    adminAddress: Chris Laco <claco@chrislaco.com>
+    url: http://localhost:8080
+  globalDefaultFlowDurabilityLevel:
+    durabilityHint: PERFORMANCE_OPTIMIZED
+  hashicorpVault:
+    configuration:
+      engineVersion: 2
+      skipSslVerification: true
+      timeout: 60
+      vaultCredentialId: vault-plugin-credential
+      vaultUrl: http://vault-server:8200

@@ -1,0 +1,54 @@
+[tool.black]
+line-length = 119
+exclude = "src/python/deployments/grpc/deployments_pb2*"
+
+[tool.coverage.report]
+# fail_under = 90
+skip_covered = false
+sort = "cover"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+omit = ["src/python/deployments/grpc/*_pb2*"]
+
+[tool.poetry]
+name = "claco.deployments.api"
+version = "0.0.0"
+description = "Deployments Project"
+authors = ["Christopher H. Laco <claco@chrislaco.com>"]
+readme = "README.md"
+packages = [
+    {include = "deployments", from = "src/python"}
+]
+include = ["poetry.lock", "src/python/deployments/templates"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+grpcio-tools = "^1.50.0"
+jenkins-job-builder = "^4.1.0"
+jinja2 = "^3.1.2"
+typer = "^0.7.0"
+google-api-python-client = "^2.66.0"
+grpc-interceptor = {extras = ["testing"], version = "^0.15.0"}
+debugpy = "^1.6.4"
+boto3 = "^1.26.21"
+grpcio-health-checking = "^1.51.1"
+grpcio = "^1.51.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+coverage = "^6.5.0"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-grpc = "^0.8.0"
+pytest-black = "^0.3.12"
+pytest-docfiles = "^0.2.0"
+pytest-eradicate = "^0.0.5"
+
+[tool.poetry.scripts]
+deployctl = "deployments.cli:main"
+deployments = "deployments.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

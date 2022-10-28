@@ -1,0 +1,16 @@
+blueocean:latest
+command-launcher:latest
+configuration-as-code:latest
+docker-plugin:latest
+docker-workflow:latest
+git:latest
+javax-mail-api:latest
+jdk-tool:latest
+job-dsl
+matrix-auth:latest
+sshd:latest
+ssh-slaves:latest
+hashicorp-vault-plugin:latest
+view-job-filters:latest
+workflow-multibranch:latest
+ws-cleanup:latest
