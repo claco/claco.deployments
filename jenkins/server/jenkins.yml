@@ -1,0 +1,143 @@
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              id: "jenkins-ssh-agent"
+              description: "Jenkins SSH Agent Private Key (JCasC Generated)"
+              passphrase: "${casc/jenkins/password}"
+              privateKeySource:
+                directEntry:
+                  privateKey: "${casc/jenkins/id_rsa}"
+              scope: GLOBAL
+              username: "jenkins"
+              usernameSecret: true
+          - vaultAppRoleCredential:
+              id: "vault-jenkins-approle-credential"
+              description: "Vault Jenkins AppRole Credential (JCasC Generated"
+              path: "approle"
+              roleId: "${casc/jenkins/role_id}"
+              secretId: "${casc/jenkins/secret_id}"
+              scope: GLOBAL
+
+jenkins:
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "GROUP:Overall/Read:authenticated"
+        - "USER:Overall/Administer:${casc/jenkins/username}"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+  labelString:
+  mode: EXCLUSIVE
+  nodes:
+    - permanent:
+        labelString: docker linux
+        launcher:
+          ssh:
+            credentialsId: "jenkins-ssh-agent"
+            host: "jenkins-agent"
+            port: 22
+            sshHostKeyVerificationStrategy: nonVerifyingKeyVerificationStrategy
+        name: jenkins-agent
+        nodeDescription: "Jenkins SSH Agent (JCasC Generated)"
+        nodeProperties:
+          - envVars:
+              env:
+                - key: VAULT_ADDR
+                  value: ${CASC_VAULT_AGENT_ADDR}
+        numExecutors: 5
+        remoteFS: /home/jenkins/agent
+        retentionStrategy: always
+  noUsageStatistics: true
+  numExecutors: 0
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${casc/jenkins/username}"
+          name: Administrator
+          description: "Administration Account (JCasC Generated)"
+          password: "${casc/jenkins/password}"
+          properties:
+            - timezone:
+                timeZoneName: America/New_York
+  views:
+    - list:
+        name: "Building"
+        jobFilters:
+          - buildStatusFilter:
+              building: true
+              inBuildQueue: true
+              includeExcludeTypeString: "includeMatched"
+              neverBuilt: false
+        recurse: true
+    - list:
+        name: "Deployments"
+        includeRegex: "deployments/.*"
+        recurse: true
+    - list:
+        name: "Failed"
+        jobFilters:
+          - jobStatusFilter:
+              aborted: true
+              disabled: false
+              failed: true
+              includeExcludeTypeString: "includeMatched"
+              stable: false
+              unstable: true
+        recurse: true
+    - list:
+        name: "Recent"
+        jobFilters:
+          - jobTypeFilter:
+              includeExcludeTypeString: "includeMatched"
+              jobType: "org.jenkinsci.plugins.workflow.job.WorkflowJob"
+          - mostRecentJobsFilter:
+              checkStartTime: false
+              maxToInclude: 10
+        recurse: true
+
+jobs:
+  - file: "${JENKINS_HOME}/seed.groovy"
+
+unclassified:
+  location:
+    adminAddress: "Chris Laco <claco@chrislaco.com>"
+    url: "http://localhost:8080"
+  globalDefaultFlowDurabilityLevel:
+    durabilityHint: PERFORMANCE_OPTIMIZED
+  hashicorpVault:
+    configuration:
+      engineVersion: 2
+      skipSslVerification: true
+      timeout: 5
+      vaultUrl: "${CASC_VAULT_AGENT_ADDR}"
+      vaultCredentialId: "vault-jenkins-approle-credential"
+  platformLabelerGlobalConfiguration:
+    labelConfig:
+      architectureName: false
+      architectureNameVersion: false
+      name: false
+      nameVersion: false
+      version: false
+      windowsFeatureUpdate: false
+  prometheusConfiguration:
+    appendParamLabel: true
+    appendStatusLabel: true
+    collectDiskUsage: true
+    collectNodeStatus: true
+    collectingMetricsPeriodInSeconds: 300
+    countAbortedBuilds: true
+    countFailedBuilds: true
+    countNotBuiltBuilds: true
+    countSuccessfulBuilds: true
+    countUnstableBuilds: true
+    defaultNamespace: "default"
+    fetchTestResults: true
+    jobAttributeName: "jenkins_job"
+    path: "prometheus"
+    perBuildMetrics: false
+    processingDisabledBuilds: true
+    useAuthenticatedEndpoint: false
